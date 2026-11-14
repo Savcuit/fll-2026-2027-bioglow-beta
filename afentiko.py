@@ -24,6 +24,7 @@ max_accel=2000.0
 max_rate=520.0
 max_turn_accel=2000.0
 max_tool_accel=5000.0
+tool_stuck_ms=2000
 top=1000.0
  
 min_frac=.03
@@ -157,9 +158,10 @@ def tool(name,angle,speed=None,accel=None,hold=True,block=True):
     try:m.control.limits(acceleration=frac(accel,max_tool_accel,tool_accel))
     except Exception:pass
     m.run_angle(spd,angle,Stop.HOLD if hold else Stop.COAST,wait=False)
-    t=StopWatch()
+    mark=m.angle();t=StopWatch()
     while block and not m.done():
-        if t.time()>abs(angle)/spd*1500+800:m.stop();break
+        if abs(m.angle()-mark)>2:mark=m.angle();t.reset()
+        elif t.time()>tool_stuck_ms:m.hold();break
         yield
  
 def reset():
